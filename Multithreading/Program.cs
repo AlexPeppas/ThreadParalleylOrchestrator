@@ -23,14 +23,34 @@ namespace Multithreading
 
             var request = new WrapperRequest { payload = "Stringified object" };
             var response = new WrapperResponse { result = "Stringified response"};
-
+            
+            #region build ThreadOrchestrator dictionaries
             tOrch.AddDelegates(new List<ThreadOrchestrator.Actions> 
-            { DoSomethingParameterLess,
-            DoSomethingOtherParameterLess});
-            //
+            { 
+                DoSomethingParameterLess,
+                DoSomethingOtherParameterLess
+            });
 
+            tOrch.AddDelegates<WrapperRequest>(new Dictionary<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest>
+            {
+                {Work1InVoid,request }
+            });
 
-            var orch = new OrchestratorM();
+            tOrch.AddDelegates<WrapperResponse>(new List<Func<WrapperResponse>>
+            {
+                Work1OutParameterless
+            });
+
+            tOrch.AddDelegates<WrapperRequest,WrapperResponse>(new Dictionary<Func<WrapperRequest, WrapperResponse>, WrapperRequest>
+            {
+                {Work1In1Out,request }
+            });
+            #endregion
+
+            tOrch.Execute();
+            var responseTOrch = tOrch.Execute<WrapperRequest, WrapperResponse>();
+
+            /*var orch = new OrchestratorM();
             orch.AddDelegates(new List<OrchestratorM.ActionVoids> { DoSomethingParameterLess });
             
 
@@ -55,7 +75,7 @@ namespace Multithreading
 
             Orchestrator(new List<ActionVoids> { DoSomethingParameterLess },
                 new List<Action1Input<int>> { DoSomething1Input }, 5,
-                new List<Action2Inputs<int, int>> { DoSomething2Input }, 10, 12);
+                new List<Action2Inputs<int, int>> { DoSomething2Input }, 10, 12);*/
         }
 
         //orchestrator receives lists of delegates (0,1,2 inputs voids) formats them with BuildGenericDelegates function and then execute them in parallel.
@@ -216,19 +236,48 @@ namespace Multithreading
         #endregion
 
         #region Thread Job Simulation
-        public static ObjectSimulation DoSomethingParameterless()
+
+        public static void Work1InVoid (WrapperRequest request)
         {
-            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working");
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
+                + Environment.NewLine+
+                " on WrapperRequest with void output");
             Thread.Sleep(1500);
-            var output = new ObjectSimulation { prop1 = "5", prop2 = "10" };
-            return output;
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
+        }
+
+        public static WrapperResponse Work1OutParameterless()
+        {
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
+                + Environment.NewLine +
+                " parameterless with WrapperResponse");
+            Thread.Sleep(1500);
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
+            return new WrapperResponse { result = $"result_of_Td_{Thread.CurrentThread.ManagedThreadId}" };
+        }
+
+        public static WrapperResponse Work1In1Out(WrapperRequest request)
+        {
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
+                + Environment.NewLine +
+                " on WrapperRequest with WrapperResponse");
+            Thread.Sleep(1500);
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
+            return new WrapperResponse { result = $"result_of_Td_{Thread.CurrentThread.ManagedThreadId}" };
+        }
+
+        public static void WorkVoidParameterLess()
+        {
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working.");
+            Thread.Sleep(2000);
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished working.");
         }
 
         public static void DoSomethingParameterLess()
         {
-            Console.WriteLine($"Thread started working.");
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working.");
             Thread.Sleep(2000);
-            Console.WriteLine($"Thread finished working.");
+            Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished working.");
         }
 
         public static void DoSomething1Input(int num)

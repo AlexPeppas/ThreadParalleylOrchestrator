@@ -27,15 +27,25 @@ namespace Multithreading
         {
             internal static Dictionary<Action<T>, T> actions = new Dictionary<Action<T>, T>();
         }
-
+       
         internal static class FuncDictionary<T>
         {
             internal static Dictionary<Func<T>, T> funcs = new Dictionary<Func<T>, T>();
+        }
+        //simplified the upper FuncDictionary - no need for Output initialization
+        internal static class FuncList<R>
+        {
+            internal static List<Func<R>> funcs = new List<Func<R>>();
         }
 
         internal static class FuncDictionary<T, R>
         {
             internal static Dictionary<Func<T, R>, Tuple<T, R>> funcs = new Dictionary<Func<T, R>, Tuple<T, R>>();
+        }
+        //simplified the upper FuncDictionary - no need for Output initialization
+        internal static class FuncList<T,R>
+        {
+            internal static Dictionary<Func<T, R>, T> funcs = new Dictionary<Func<T, R>, T>();
         }
         #endregion
 
@@ -57,19 +67,35 @@ namespace Multithreading
             }
         }
 
-        public void AddDelegates<R>(Dictionary<Func<R>, R> input)
+        /*public void AddDelegates<R>(List<Func<R>> input)
         {
             foreach (var func in input)
             {
-                FuncDictionary<R>.funcs.Add(new Func<R>(func.Key), default(R));
+                FuncDictionary<R>.funcs.Add(func, default(R));
+            }
+        }*/
+        //simplified the upper AddDelegates - no need for Output initialization in Tuple
+        public void AddDelegates<R>(List<Func<R>> input)
+        {
+            foreach (var func in input)
+            {
+                FuncList<R>.funcs.Add(func);
             }
         }
 
-        public void AddDelegates<T,R>(Dictionary<Func<T,R>,Tuple<T,R>> input)
+        /*public void AddDelegates<T,R>(Dictionary<Func<T,R>,Tuple<T,R>> input)
         {
             foreach (var func in input)
             {
                 FuncDictionary<T, R>.funcs.Add(new Func<T, R>(func.Key),new Tuple<T, R>(func.Value.Item1,default(R)));
+            }
+        }*/
+        //simplified the upper AddDelegates - no need for Output initialization in Tuple
+        public void AddDelegates<T, R>(Dictionary<Func<T, R>, T> input)
+        {
+            foreach (var func in input)
+            {
+                FuncList<T, R>.funcs.Add(new Func<T, R>(func.Key), func.Value);
             }
         }
 
@@ -86,24 +112,19 @@ namespace Multithreading
             var voidActionsNum = actions.Count;
             ThreadPool.GetAvailableThreads(out workerThreads, out completionPortThreads);
             //ThreadPool.QueueUserWorkItem(new WaitCallback())
-
-            Parallel.Invoke(() =>
-            {
-                foreach (var item in actions)
-                {
-                    item.Invoke();
-                }
-            });
+            Parallel.Invoke(actions.ToArray());
         }
 
-        public void Execute<T,R>()
+        public Dictionary<string, R> Execute<T,R>()
         {
+            var response = new Dictionary<string, R>();
+
             //parallel invoke for all data holders (optimize it with custom task factory
             Parallel.Invoke(
             //parallely execute the parameterless voids
             () =>
                 {
-                    Parallel.Invoke(() => actions.ToArray());
+                    Parallel.Invoke(actions.ToArray());
                 },
             //parallely execute voids with their input wrapper class
             () =>
@@ -116,22 +137,24 @@ namespace Multithreading
             //parallely execute the parameterless Funcs and store their result in the initial dictionary
             ()=>
                 {
-                    foreach (var item in FuncDictionary<R>.funcs)
+                    foreach (var item in FuncList<R>.funcs)
                     {
-                        var output = item.Key();
-                        FuncDictionary<R>.funcs[item.Key] = output;
+                        var output = item.Invoke();
+                        response.Add(item.Method.Name, output) ;
                     }
                 },
             //parallely execute the Funcs and update the dict value to hold the new Tuple with the new Output
             () =>
                 {
-                    foreach (var item in FuncDictionary<T,R>.funcs)
+                    foreach (var item in FuncList<T,R>.funcs)
                     {
-                        var output = item.Key(item.Value.Item1);
-                        FuncDictionary<T, R>.funcs[item.Key] = new Tuple<T, R>(item.Value.Item1, output);
+                        var output = item.Key(item.Value);                        
+                        response.Add(item.Key.Method.Name, output);
                     }
                 }
             );
+
+            return response;
         }
 
         #endregion
