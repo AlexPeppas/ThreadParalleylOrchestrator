@@ -22,30 +22,29 @@ namespace Multithreading.DelegatesOrchestrator
         #region Data Holders (Structures)
         internal static List<Action> actions = new List<Action>();
 
-        internal static class ActionDictionary<T>
+        internal static class ActionsList<T>
+        {
+            internal static List<Tuple<Actions<T>, T>> actions = new List<Tuple<Actions<T>, T>>();
+        }
+
+        /*internal static class ActionDictionary<T>
         {
             internal static Dictionary<Action<T>, T> actions = new Dictionary<Action<T>, T>();
-        }
+        }*/
        
-        internal static class FuncDictionary<T>
-        {
-            internal static Dictionary<Func<T>, T> funcs = new Dictionary<Func<T>, T>();
-        }
-        //simplified the upper FuncDictionary - no need for Output initialization
         internal static class FuncList<R>
         {
             internal static List<Func<R>> funcs = new List<Func<R>>();
         }
 
-        internal static class FuncDictionary<T, R>
-        {
-            internal static Dictionary<Func<T, R>, Tuple<T, R>> funcs = new Dictionary<Func<T, R>, Tuple<T, R>>();
-        }
-        //simplified the upper FuncDictionary - no need for Output initialization
         internal static class FuncList<T,R>
         {
-            internal static Dictionary<Func<T, R>, T> funcs = new Dictionary<Func<T, R>, T>();
+            internal static List<Tuple<Func<T, R>, T>> funcs = new List<Tuple<Func<T, R>, T>>();
         }
+        /*internal static class FuncList<T,R>
+        {
+            internal static Dictionary<Func<T, R>, T> funcs = new Dictionary<Func<T, R>, T>();
+        }*/
         #endregion
 
         #region Initialize & Build Data Holders
@@ -57,23 +56,15 @@ namespace Multithreading.DelegatesOrchestrator
             }
         }
 
-        public void AddDelegates<T>(Dictionary<Actions<T>, T> input)
+        public void AddDelegates<T>(List<Tuple<Actions<T>, T>> input)
         {
 
             foreach (var action in input)
             {
-                ActionDictionary<T>.actions.Add(new Action<T>(action.Key), action.Value);
+                ActionsList<T>.actions.Add(new Tuple<Actions<T>,T>(action.Item1, action.Item2));
             }
         }
 
-        /*public void AddDelegates<R>(List<Func<R>> input)
-        {
-            foreach (var func in input)
-            {
-                FuncDictionary<R>.funcs.Add(func, default(R));
-            }
-        }*/
-        //simplified the upper AddDelegates - no need for Output initialization in Tuple
         public void AddDelegates<R>(List<Func<R>> input)
         {
             foreach (var func in input)
@@ -82,19 +73,11 @@ namespace Multithreading.DelegatesOrchestrator
             }
         }
 
-        /*public void AddDelegates<T,R>(Dictionary<Func<T,R>,Tuple<T,R>> input)
+        public void AddDelegates<T, R>(List<Tuple<Func<T, R>, T>> input)
         {
             foreach (var func in input)
             {
-                FuncDictionary<T, R>.funcs.Add(new Func<T, R>(func.Key),new Tuple<T, R>(func.Value.Item1,default(R)));
-            }
-        }*/
-        //simplified the upper AddDelegates - no need for Output initialization in Tuple
-        public void AddDelegates<T, R>(Dictionary<Func<T, R>, T> input)
-        {
-            foreach (var func in input)
-            {
-                FuncList<T, R>.funcs.Add(new Func<T, R>(func.Key), func.Value);
+                FuncList<T, R>.funcs.Add(new Tuple<Func<T, R>,T>(func.Item1, func.Item2));
             }
         }
 
@@ -128,28 +111,29 @@ namespace Multithreading.DelegatesOrchestrator
             //parallely execute voids with their input wrapper class
             () =>
                 {
-                    foreach (var item in ActionDictionary<T>.actions)
+                    foreach (var action in ActionsList<T>.actions)
                     {
-                        item.Key(item.Value);
+                        action.Item1(action.Item2);
                     }
                 },
             //parallely execute the parameterless Funcs and store their result in the initial dictionary
             ()=>
                 {
-                    foreach (var item in FuncList<R>.funcs)
+                    foreach (var func in FuncList<R>.funcs)
                     {
-                        string key = item.Method.Name;
-                        var output = item.Invoke();
+                        string key = func.Method.Name;
+                        var output = func.Invoke();
                         response.Add(key, output) ;
                     }
                 },
             //parallely execute the Funcs and update the dict value to hold the new Tuple with the new Output
             () =>
                 {
-                    foreach (var item in FuncList<T,R>.funcs)
+                    foreach (var func in FuncList<T,R>.funcs)
                     {
-                        var output = item.Key(item.Value);                        
-                        response.Add(item.Key.Method.Name, output);
+                        string key = func.Item1.Method.Name;
+                        var output = func.Item1(func.Item2);                        
+                        response.Add(key, output);
                     }
                 }
             );

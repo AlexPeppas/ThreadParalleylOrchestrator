@@ -24,11 +24,9 @@ namespace DelegatesOrchestrator
                 FunctionSimulations.WorkVoidParameterLess
             });
 
-            tOrch.AddDelegates<WrapperRequest>(new Dictionary<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest>
-            {
-                {
-                    FunctionSimulations.Work1InVoid,request
-                }
+            tOrch.AddDelegates<WrapperRequest>(new List<Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest>>
+            { 
+                new Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request)
             });
 
             tOrch.AddDelegates<WrapperResponse>(new List<Func<WrapperResponse>>
@@ -36,18 +34,16 @@ namespace DelegatesOrchestrator
                 FunctionSimulations.Work1OutParameterless
             });
 
-            tOrch.AddDelegates<WrapperRequest, WrapperResponse>(new Dictionary<Func<WrapperRequest, WrapperResponse>, WrapperRequest>
+            tOrch.AddDelegates<WrapperRequest, WrapperResponse>(new List<Tuple<Func<WrapperRequest, WrapperResponse>, WrapperRequest>>
             {
-                {
-                    FunctionSimulations.Work1In1Out,request
-                }
+                new Tuple<Func<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request)
             });
             #endregion
 
             tOrch.Execute();
             var responseTOrch = tOrch.Execute<WrapperRequest, WrapperResponse>();
         }
-        
+
     }
 
 }
