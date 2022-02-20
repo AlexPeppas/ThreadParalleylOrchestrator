@@ -1,4 +1,5 @@
-﻿using Newtonsoft.Json;
+﻿using DelegatesOrchestrator;
+using Newtonsoft.Json;
 using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
@@ -18,6 +19,8 @@ namespace Multithreading
 
         static void Main(string[] args)
         {
+            var DelegatesOrch = new MasterThread();
+            DelegatesOrch.Main();
             //new era
             var tOrch = new ThreadOrchestrator();
 

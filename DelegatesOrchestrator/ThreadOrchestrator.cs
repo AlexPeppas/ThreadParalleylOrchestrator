@@ -4,7 +4,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Multithreading
+namespace Multithreading.DelegatesOrchestrator
 {
     /// <summary>
     /// T is going to be a request Wrapper Class ex. T:{payload,headers} and 
@@ -138,8 +138,9 @@ namespace Multithreading
                 {
                     foreach (var item in FuncList<R>.funcs)
                     {
+                        string key = item.Method.Name;
                         var output = item.Invoke();
-                        response.Add(item.Method.Name, output) ;
+                        response.Add(key, output) ;
                     }
                 },
             //parallely execute the Funcs and update the dict value to hold the new Tuple with the new Output
