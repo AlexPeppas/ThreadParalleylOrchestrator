@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using DelegatesOrchestrator.Types;
 using Multithreading.DelegatesOrchestrator;
+using static Multithreading.DelegatesOrchestrator.ThreadOrchestrator;
 
 namespace DelegatesOrchestrator
 {
@@ -29,19 +30,20 @@ namespace DelegatesOrchestrator
                 new Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request)
             });
 
-            tOrch.AddDelegates<WrapperResponse>(new List<Func<WrapperResponse>>
+            tOrch.AddDelegates<WrapperResponse>(new List<Funcs<WrapperResponse>>
             {
                 FunctionSimulations.Work1OutParameterless
             });
 
-            tOrch.AddDelegates<WrapperRequest, WrapperResponse>(new List<Tuple<Func<WrapperRequest, WrapperResponse>, WrapperRequest>>
+            tOrch.AddDelegates<WrapperRequest, WrapperResponse>(new List<Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>>
             {
-                new Tuple<Func<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request)
+                new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request)
             });
             #endregion
 
             tOrch.Execute();
             var responseTOrch = tOrch.Execute<WrapperRequest, WrapperResponse>();
+            
         }
 
     }

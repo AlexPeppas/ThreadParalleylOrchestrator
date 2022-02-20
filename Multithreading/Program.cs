@@ -21,7 +21,14 @@ namespace Multithreading
         {
             var DelegatesOrch = new MasterThread();
             DelegatesOrch.Main();
-            //new era
+            
+            //
+            //Chain of Functions (Dependency on the previous)
+            Task<WrapperResponse>.Factory.StartNew(() =>
+            Work1In1Out(new WrapperRequest { })).
+            ContinueWith(prevTask => Work1InVoid(new WrapperRequest { }));
+            //
+
             var tOrch = new ThreadOrchestrator();
 
             var request = new WrapperRequest { payload = "Stringified object" };

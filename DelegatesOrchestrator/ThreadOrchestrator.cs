@@ -34,12 +34,12 @@ namespace Multithreading.DelegatesOrchestrator
        
         internal static class FuncList<R>
         {
-            internal static List<Func<R>> funcs = new List<Func<R>>();
+            internal static List<Funcs<R>> funcs = new List<Funcs<R>>();
         }
 
         internal static class FuncList<T,R>
         {
-            internal static List<Tuple<Func<T, R>, T>> funcs = new List<Tuple<Func<T, R>, T>>();
+            internal static List<Tuple<Funcs<T, R>, T>> funcs = new List<Tuple<Funcs<T, R>, T>>();
         }
         /*internal static class FuncList<T,R>
         {
@@ -65,7 +65,7 @@ namespace Multithreading.DelegatesOrchestrator
             }
         }
 
-        public void AddDelegates<R>(List<Func<R>> input)
+        public void AddDelegates<R>(List<Funcs<R>> input)
         {
             foreach (var func in input)
             {
@@ -73,11 +73,11 @@ namespace Multithreading.DelegatesOrchestrator
             }
         }
 
-        public void AddDelegates<T, R>(List<Tuple<Func<T, R>, T>> input)
+        public void AddDelegates<T, R>(List<Tuple<Funcs<T, R>, T>> input)
         {
             foreach (var func in input)
             {
-                FuncList<T, R>.funcs.Add(new Tuple<Func<T, R>,T>(func.Item1, func.Item2));
+                FuncList<T, R>.funcs.Add(new Tuple<Funcs<T, R>,T>(func.Item1, func.Item2));
             }
         }
 
@@ -141,6 +141,45 @@ namespace Multithreading.DelegatesOrchestrator
             return response;
         }
 
+        public Dictionary<string, R> ExecuteParallel<T, R>()
+        {
+            var response = new Dictionary<string, R>();
+
+            Parallel.Invoke
+            (
+                () =>
+                { 
+                    Parallel.Invoke(actions.ToArray()); 
+                },
+                () =>
+                {
+                    Parallel.ForEach(ActionsList<T>.actions, action =>
+                    {
+                        action.Item1(action.Item2);
+                    });
+                },
+                () =>
+                {
+                    Parallel.ForEach(FuncList<R>.funcs, func =>
+                    {
+                        string key = func.Method.Name;
+                        var output = func.Invoke();
+                        response.Add(key, output);
+                    });
+                },
+                () =>
+                {
+                    Parallel.ForEach(FuncList<T, R>.funcs, func =>
+                    {
+                        string key = func.Item1.Method.Name;
+                        var output = func.Item1(func.Item2);
+                        response.Add(key, output);
+                    });
+                }
+            );
+
+            return response;
+        }
         #endregion
     }
 }
