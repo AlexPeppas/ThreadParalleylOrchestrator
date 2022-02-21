@@ -7,7 +7,7 @@ using DelegatesOrchestrator.Types;
 using Multithreading.DelegatesOrchestrator;
 using System.Runtime.Serialization;
 using static Multithreading.DelegatesOrchestrator.ThreadOrchestrator;
-using System.Text.Json;
+
 
 namespace DelegatesOrchestrator
 {
@@ -17,7 +17,7 @@ namespace DelegatesOrchestrator
         {
             var tOrch = new ThreadOrchestrator();
             WrapperRequest request = new WrapperRequest();
-            request.payload = JsonSerializer.Serialize(new DummyRequest { property1 = "10", property2 = 10 });
+            request.payload = "2010";
 
             #region build ThreadOrchestrator dictionaries
             tOrch.AddDelegates(new List<ThreadOrchestrator.Actions>
@@ -27,13 +27,15 @@ namespace DelegatesOrchestrator
             });
 
             tOrch.AddDelegates<WrapperRequest>(new List<Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest>>
-            { 
-                new Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request)
+            {
+                new Tuple<ThreadOrchestrator.Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request),
+                new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request)
             });
 
             tOrch.AddDelegates<WrapperResponse>(new List<Funcs<WrapperResponse>>
             {
-                FunctionSimulations.Work1OutParameterless
+                FunctionSimulations.Work1OutParameterless,
+                FunctionSimulations.WorkWithException
             });
 
             tOrch.AddDelegates<WrapperRequest, WrapperResponse>(new List<Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>>
@@ -42,12 +44,13 @@ namespace DelegatesOrchestrator
             });
             #endregion
 
-            tOrch.Execute();
-            var responseTOrch = tOrch.Execute<WrapperRequest, WrapperResponse>();
-
+            //tOrch.Execute();
+            
+            //var responseTOrch = tOrch.Execute<WrapperRequest, WrapperResponse>();
+            
             try
             {
-                var response2 = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
+                var responseTOrch = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
             }
             catch (AggregateException exceptions)
             {
@@ -60,13 +63,6 @@ namespace DelegatesOrchestrator
                         ignoredExceptions.Add(ex);
                 }
                 if (ignoredExceptions.Count > 0) throw new AggregateException(ignoredExceptions);
-            }
-            
-            foreach (var item in responseTOrch)
-            {
-                Console.WriteLine($"Function with Name {item.Key} returned the object with name : {item.Value.GetType().Name} and assembly : {item.Value.GetType().Assembly}");
-                var props = JsonSerializer.Deserialize<DummyResponse>(item.Value.result);
-                Console.WriteLine($"With props res1 : {0} , res2 : {1}", props.property1, props.property2);
             }
         }
 

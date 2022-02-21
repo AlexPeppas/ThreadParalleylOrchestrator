@@ -10,6 +10,16 @@ namespace DelegatesOrchestrator
 {
     public static class FunctionSimulations
     {
+        public static void WorkWithException (WrapperRequest request)
+        {
+            throw new ArgumentException("You request is not in valid format");
+        }
+
+        public static WrapperResponse WorkWithException()
+        {
+            throw new Exception("Application lost connection");
+        }
+
         public static void Work1InVoid(WrapperRequest request)
         {
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"

@@ -142,21 +142,20 @@ namespace Multithreading.DelegatesOrchestrator
             return response;
         }
 
-        public Dictionary<string, R> ExecuteParallel<T, R>()
+        public ConcurrentDictionary<string, R> ExecuteParallel<T, R>()
         {
-            var response = new Dictionary<string, R>();
+            var response = new ConcurrentDictionary<string, R>();
             var exceptionsQueue = new ConcurrentQueue<Exception>();
 
             Parallel.Invoke
             (
                 () =>
                 { 
-                    //Parallel.Invoke(actions.ToArray());
                     Parallel.ForEach(actions, action =>
                     {
                         try
                         { 
-                            action();  //not sure if this will be invoked
+                            action(); 
                         }
                         catch (Exception ex)
                         {
@@ -186,7 +185,7 @@ namespace Multithreading.DelegatesOrchestrator
                         {
                             string key = func.Method.Name;
                             var output = func.Invoke();
-                            response.Add(key, output);
+                            response.TryAdd(key, output);
                         }
                         catch (Exception ex)
                         {
@@ -202,7 +201,7 @@ namespace Multithreading.DelegatesOrchestrator
                         {
                             string key = func.Item1.Method.Name;
                             var output = func.Item1(func.Item2);
-                            response.Add(key, output);
+                            response.TryAdd(key, output);
                         }
                         catch (Exception ex)
                         {
