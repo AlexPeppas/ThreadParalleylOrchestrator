@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Text;
 using System.Threading;
@@ -144,40 +145,76 @@ namespace Multithreading.DelegatesOrchestrator
         public Dictionary<string, R> ExecuteParallel<T, R>()
         {
             var response = new Dictionary<string, R>();
+            var exceptionsQueue = new ConcurrentQueue<Exception>();
 
             Parallel.Invoke
             (
                 () =>
                 { 
-                    Parallel.Invoke(actions.ToArray()); 
+                    //Parallel.Invoke(actions.ToArray());
+                    Parallel.ForEach(actions, action =>
+                    {
+                        try
+                        { 
+                            action();  //not sure if this will be invoked
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptionsQueue.Enqueue(ex);
+                        }
+                    });
                 },
                 () =>
                 {
                     Parallel.ForEach(ActionsList<T>.actions, action =>
                     {
-                        action.Item1(action.Item2);
+                        try 
+                        { 
+                            action.Item1(action.Item2);
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptionsQueue.Enqueue(ex);
+                        }
                     });
                 },
                 () =>
                 {
                     Parallel.ForEach(FuncList<R>.funcs, func =>
                     {
-                        string key = func.Method.Name;
-                        var output = func.Invoke();
-                        response.Add(key, output);
+                        try
+                        {
+                            string key = func.Method.Name;
+                            var output = func.Invoke();
+                            response.Add(key, output);
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptionsQueue.Enqueue(ex);
+                        }
                     });
                 },
                 () =>
                 {
                     Parallel.ForEach(FuncList<T, R>.funcs, func =>
                     {
-                        string key = func.Item1.Method.Name;
-                        var output = func.Item1(func.Item2);
-                        response.Add(key, output);
+                        try
+                        {
+                            string key = func.Item1.Method.Name;
+                            var output = func.Item1(func.Item2);
+                            response.Add(key, output);
+                        }
+                        catch (Exception ex)
+                        {
+                            exceptionsQueue.Enqueue(ex);
+                        }
                     });
                 }
             );
 
+            if (exceptionsQueue.Count > 0) 
+                throw new AggregateException(exceptionsQueue);
+            
             return response;
         }
         #endregion

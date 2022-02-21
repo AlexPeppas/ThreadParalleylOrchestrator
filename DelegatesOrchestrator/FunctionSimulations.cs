@@ -26,7 +26,7 @@ namespace DelegatesOrchestrator
                 " parameterless with WrapperResponse");
             Thread.Sleep(1500);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
-            return new WrapperResponse { result = $"result_of_Td_{Thread.CurrentThread.ManagedThreadId}" };
+            return new WrapperResponse { result = "{\"property1\":\"30\",\"property2\":\"12\"}" };
         }
 
         public static WrapperResponse Work1In1Out(WrapperRequest request)
@@ -36,7 +36,7 @@ namespace DelegatesOrchestrator
                 " on WrapperRequest with WrapperResponse");
             Thread.Sleep(1500);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
-            return new WrapperResponse { result = $"result_of_Td_{Thread.CurrentThread.ManagedThreadId}" };
+            return new WrapperResponse { result = "{\"property1\":\"10\",\"property2\":\"15\"}" };
         }
 
         public static void WorkVoidParameterLess()
