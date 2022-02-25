@@ -20,7 +20,10 @@ namespace Multithreading
         static void Main(string[] args)
         {
             var DelegatesOrch = new MasterThread();
-            try { DelegatesOrch.Main(); }
+            try 
+            { 
+                DelegatesOrch.Main();
+            }
             catch (AggregateException ex)
             {
                 foreach (var item in ex.Flatten().InnerExceptions) 

@@ -10,6 +10,11 @@ namespace DelegatesOrchestrator
 {
     public static class FunctionSimulations
     {
+        public static void WorkWithExceptionParameterless()
+        {
+            throw new Exception("WorkWithExceptionParameterless failed !");
+        }
+
         public static void WorkWithException (WrapperRequest request)
         {
             throw new ArgumentException("You request is not in valid format");

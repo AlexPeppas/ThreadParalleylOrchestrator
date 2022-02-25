@@ -74,6 +74,7 @@
     <Compile Include="ThreadOrchestrator.cs" />
     <Compile Include="Types\DummyRequest.cs" />
     <Compile Include="Types\DummyResponse.cs" />
+    <Compile Include="Types\ErrorResponse.cs" />
     <Compile Include="Types\WrapperRequest.cs" />
     <Compile Include="Types\WrapperResponse.cs" />
   </ItemGroup>
