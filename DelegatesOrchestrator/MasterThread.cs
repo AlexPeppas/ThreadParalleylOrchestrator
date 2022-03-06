@@ -7,7 +7,7 @@ using DelegatesOrchestrator.Types;
 using Multithreading.DelegatesOrchestrator;
 using System.Runtime.Serialization;
 using static Multithreading.DelegatesOrchestrator.ThreadOrchestrator;
-
+using System.Diagnostics;
 
 namespace DelegatesOrchestrator
 {
@@ -17,36 +17,81 @@ namespace DelegatesOrchestrator
         {
             var tOrch = new ThreadOrchestrator();
             WrapperRequest request = new WrapperRequest();
-            request.payload = "2010";
+            request.payload = "2022";
 
             #region Build Orchestrators Dictionaries
             tOrch.AddIndexedDelegates(new Dictionary<int, Actions>
             {
                 { 0,FunctionSimulations.WorkWithExceptionParameterless},
                 { 1, FunctionSimulations.WorkVoidParameterLess },
-                { 2, FunctionSimulations.WorkVoidParameterLess }
+                { 2, FunctionSimulations.WorkVoidParameterLess },
+                { 3, FunctionSimulations.WorkWithExceptionParameterless },
+                { 4,FunctionSimulations.WorkWithExceptionParameterless},
+                { 5, FunctionSimulations.WorkVoidParameterLess },
+                { 6, FunctionSimulations.WorkVoidParameterLess },
+                { 7, FunctionSimulations.WorkWithExceptionParameterless }
             });
             
             tOrch.AddIndexedDelegates(new Dictionary<int, Tuple<Actions<WrapperRequest>, WrapperRequest>>
             {
                 {3, new Tuple<Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request) },
-                {4, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) }
+                {4, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) },
+                {5, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) },
+                {1, new Tuple<Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request) },
+                {2, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) },
+                {0, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) },
+                {6, new Tuple<Actions<WrapperRequest>, WrapperRequest> (FunctionSimulations.Work1InVoid,request) },
+                {7, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) },
+                {8, new Tuple<Actions<WrapperRequest>,WrapperRequest>(FunctionSimulations.WorkWithException,request) }
             });
 
             tOrch.AddIndexedDelegates(new Dictionary<int,Funcs<WrapperResponse>>
             {
+                {1, FunctionSimulations.Work1OutParameterless },
+                {2, FunctionSimulations.WorkWithException },
+                {3, FunctionSimulations.Work1OutParameterless },
+                {4, FunctionSimulations.WorkWithException },
                 {5, FunctionSimulations.Work1OutParameterless },
-                {6, FunctionSimulations.WorkWithException }
+                {6, FunctionSimulations.WorkWithException },
+                {7, FunctionSimulations.Work1OutParameterless },
+                {0, FunctionSimulations.WorkWithException }
             });
 
             tOrch.AddIndexedDelegates(new Dictionary<int,Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>>
             {
+                {1, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
+                {2, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
                 {7, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
-                {8, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) }
+                {8, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
+                {3, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
+                {0, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
+                {10, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) },
+                {15, new Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>(FunctionSimulations.Work1In1Out,request) }
             });
             #endregion
 
-            var response = tOrch.ExecuteParallelWithExceptions<WrapperRequest, WrapperResponse>();
+            var cts = new System.Threading.CancellationTokenSource();
+            Task.Factory.StartNew
+            (
+                () =>
+                {
+                    var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
+                }
+            );
+
+            Console.WriteLine("Give me a key");
+            if (Console.ReadKey().KeyChar == 'c')
+                cts.Cancel();
+            Console.WriteLine("Jobs cancelled. Press any key to exit");
+            //var responseWithCancel = tOrch.ExecuteParallelWithCancellation<WrapperRequest, WrapperResponse>(new System.Threading.CancellationTokenSource());
+
+            var time = Stopwatch.StartNew();
+            time.Start();
+            var response = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
+            time.Stop();
+            
+            Console.WriteLine($"33 functions with avg working time of 3 seconds that would totally cost {3*33} seconds, eventually costed {time.ElapsedMilliseconds / 1000} seconds");
+
 
             #region Build ThreadOrchestrator Lists
             tOrch.AddDelegates(new List<Actions>
@@ -77,7 +122,7 @@ namespace DelegatesOrchestrator
 
             try
             {
-                var responseTOrch = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
+                var responseTOrch = tOrch.ExecuteParallelAggregation<WrapperRequest, WrapperResponse>();
             }
             catch (AggregateException exceptions)
             {

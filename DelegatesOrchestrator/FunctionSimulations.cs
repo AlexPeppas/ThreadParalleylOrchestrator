@@ -12,16 +12,19 @@ namespace DelegatesOrchestrator
     {
         public static void WorkWithExceptionParameterless()
         {
+            Thread.Sleep(3000);
             throw new Exception("WorkWithExceptionParameterless failed !");
         }
 
         public static void WorkWithException (WrapperRequest request)
         {
+            Thread.Sleep(3000);
             throw new ArgumentException("You request is not in valid format");
         }
 
         public static WrapperResponse WorkWithException()
         {
+            Thread.Sleep(3000);
             throw new Exception("Application lost connection");
         }
 
@@ -30,7 +33,7 @@ namespace DelegatesOrchestrator
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
                 + Environment.NewLine +
                 " on WrapperRequest with void output");
-            Thread.Sleep(1500);
+            Thread.Sleep(3000);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
         }
 
@@ -39,7 +42,7 @@ namespace DelegatesOrchestrator
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
                 + Environment.NewLine +
                 " parameterless with WrapperResponse");
-            Thread.Sleep(1500);
+            Thread.Sleep(3000);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
             return new WrapperResponse { result = "{\"property1\":\"30\",\"property2\":\"12\"}" };
         }
@@ -49,7 +52,7 @@ namespace DelegatesOrchestrator
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working"
                 + Environment.NewLine +
                 " on WrapperRequest with WrapperResponse");
-            Thread.Sleep(1500);
+            Thread.Sleep(3000);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished");
             return new WrapperResponse { result = "{\"property1\":\"10\",\"property2\":\"15\"}" };
         }
@@ -57,7 +60,7 @@ namespace DelegatesOrchestrator
         public static void WorkVoidParameterLess()
         {
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working.");
-            Thread.Sleep(2000);
+            Thread.Sleep(3000);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished working.");
         }
     }
