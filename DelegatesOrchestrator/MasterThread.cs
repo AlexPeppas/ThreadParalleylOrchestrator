@@ -70,22 +70,30 @@ namespace DelegatesOrchestrator
             });
             #endregion
 
+            var time = Stopwatch.StartNew();
+            time.Start();
             var cts = new System.Threading.CancellationTokenSource();
             Task.Factory.StartNew
             (
                 () =>
                 {
-                    var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
+                    tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
                 }
             );
 
-            Console.WriteLine("Give me a key");
-            if (Console.ReadKey().KeyChar == 'c')
+            Console.WriteLine("Press 'C' to cancel the running jobs");
+            var key = Console.ReadKey().KeyChar;
+            if (key == 'C' || key == 'c')
+            {
                 cts.Cancel();
-            Console.WriteLine("Jobs cancelled. Press any key to exit");
-            //var responseWithCancel = tOrch.ExecuteParallelWithCancellation<WrapperRequest, WrapperResponse>(new System.Threading.CancellationTokenSource());
+                Console.WriteLine("Cancellation Requested!");
+            }
+            time.Stop();
 
-            var time = Stopwatch.StartNew();
+            time.Start();
+            var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(new System.Threading.CancellationTokenSource());
+            time.Stop();
+
             time.Start();
             var response = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
             time.Stop();
@@ -118,14 +126,19 @@ namespace DelegatesOrchestrator
             });
             #endregion
 
+            time.Start();
             tOrch.Execute();
+            time.Stop();
 
             try
             {
+                time.Start();
                 var responseTOrch = tOrch.ExecuteParallelAggregation<WrapperRequest, WrapperResponse>();
+                time.Stop();
             }
             catch (AggregateException exceptions)
             {
+                time.Stop();
                 var ignoredExceptions = new List<Exception>();
                 foreach (var ex in exceptions.Flatten().InnerExceptions)
                 {

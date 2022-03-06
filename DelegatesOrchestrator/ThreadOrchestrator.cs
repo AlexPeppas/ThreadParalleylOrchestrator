@@ -175,11 +175,16 @@ namespace Multithreading.DelegatesOrchestrator
             var response = new ConcurrentDictionary<string, R>();
             var exceptionsQueue = new ConcurrentQueue<Exception>();
 
+            ParallelOptions options = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
             Parallel.Invoke
             (
                 () =>
                 { 
-                    Parallel.ForEach(actions, action =>
+                    Parallel.ForEach(actions, options, action =>
                     {
                         try
                         { 
@@ -193,7 +198,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(ActionsList<T>.actions, action =>
+                    Parallel.ForEach(ActionsList<T>.actions, options, action =>
                     {
                         try 
                         { 
@@ -207,7 +212,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(FuncList<R>.funcs, func =>
+                    Parallel.ForEach(FuncList<R>.funcs, options, func =>
                     {
                         try
                         {
@@ -223,7 +228,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(FuncList<T, R>.funcs, func =>
+                    Parallel.ForEach(FuncList<T, R>.funcs, options, func =>
                     {
                         try
                         {
@@ -256,11 +261,16 @@ namespace Multithreading.DelegatesOrchestrator
         {
             var response = new ConcurrentDictionary<string, object>();
 
+            ParallelOptions options = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = Environment.ProcessorCount
+            };
+
             Parallel.Invoke
             (
                 () =>
                 {
-                    Parallel.ForEach(delegates, action =>
+                    Parallel.ForEach(delegates,options, action =>
                     {
                         try
                         {
@@ -274,7 +284,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(DelegatesActionDict<T>.delegates, action =>
+                    Parallel.ForEach(DelegatesActionDict<T>.delegates, options, action =>
                     {
                         try
                         {
@@ -288,7 +298,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(DelegatesFuncDict<R>.delegates, func =>
+                    Parallel.ForEach(DelegatesFuncDict<R>.delegates, options, func =>
                     {
                         int key = func.Key;
                         try
@@ -305,7 +315,7 @@ namespace Multithreading.DelegatesOrchestrator
                 },
                 () =>
                 {
-                    Parallel.ForEach(DelegatesFuncDict<T, R>.delegates, func =>
+                    Parallel.ForEach(DelegatesFuncDict<T, R>.delegates, options, func =>
                     {
                         int key = func.Key;
                         try
