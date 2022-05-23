@@ -1,6 +1,7 @@
 ﻿using DelegatesOrchestrator.Types;
 using System;
 using System.Collections.Generic;
+using System.Data.SqlClient;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -16,7 +17,7 @@ namespace DelegatesOrchestrator
             throw new Exception("WorkWithExceptionParameterless failed !");
         }
 
-        public static void WorkWithException (WrapperRequest request)
+        public static void WorkWithException(WrapperRequest request)
         {
             Thread.Sleep(3000);
             throw new ArgumentException("You request is not in valid format");
@@ -62,6 +63,28 @@ namespace DelegatesOrchestrator
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} started working.");
             Thread.Sleep(3000);
             Console.WriteLine($"Thread {Thread.CurrentThread.ManagedThreadId} finished working.");
+        }
+
+        public static void DbDummyFetch()
+        {
+            var con = new SqlConnection("Data Source=GRPC003202;Initial Catalog=Employee;Integrated Security=True");
+            con.Open();
+
+            SqlDataReader result;
+            result = new SqlCommand("select * from dbo.Employees", con).ExecuteReader();
+
+            if (result.HasRows)
+            {
+                while (result.Read())
+                {
+                    Console.WriteLine("Name : " + result.GetString(1) + "Profession : " + result.GetString(2));
+                }
+
+            }
+            else
+                Console.WriteLine("No rows fetched");
+            result.Close();
+            con.Close();
         }
     }
 }

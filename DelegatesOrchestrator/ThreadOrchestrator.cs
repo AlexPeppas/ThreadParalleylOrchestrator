@@ -361,13 +361,26 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(delegates,options, action =>
                         {
+                            
                             try
                             {
+                                if (options.CancellationToken.IsCancellationRequested) 
+                                    options.CancellationToken.ThrowIfCancellationRequested();
+
                                 action.Value();
+                            }
+                            catch (OperationCanceledException cancelEx)
+                            {
+                                HandleException(cancelEx, action.Key, response, "_ActionParameterless");
+                                
                             }
                             catch (Exception ex)
                             {
                                 HandleException(ex, action.Key, response, "_ActionParameterless");
+                            }
+                            finally
+                            {
+                                cts.Dispose();
                             }
                         });
                     },
@@ -375,13 +388,26 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(DelegatesActionDict<T>.delegates, options, action =>
                         {
+                            
                             try
                             {
+                                if (options.CancellationToken.IsCancellationRequested)
+                                    options.CancellationToken.ThrowIfCancellationRequested();
+
                                 action.Value.Item1(action.Value.Item2);
+                            }
+                            catch (OperationCanceledException cancelEx)
+                            {
+                                HandleException(cancelEx, action.Key, response, "_Action");
+                                
                             }
                             catch (Exception ex)
                             {
                                 HandleException(ex, action.Key, response, "_Action");
+                            }
+                            finally
+                            {
+                                cts.Dispose();
                             }
                         });
                     },
@@ -389,16 +415,29 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(DelegatesFuncDict<R>.delegates, options, func =>
                         {
+                            
                             int key = func.Key;
                             try
                             {
+                                if (options.CancellationToken.IsCancellationRequested)
+                                    options.CancellationToken.ThrowIfCancellationRequested();
+
                                 var output = func.Value.Invoke();
 
                                 HandleResponse<R>(output, key, response, "_FuncParameterless");
                             }
+                            catch (OperationCanceledException cancelEx)
+                            {
+                                HandleException(cancelEx, key, response, "_FuncParameterless");
+                                
+                            }
                             catch (Exception ex)
                             {
                                 HandleException(ex, key, response, "_FuncParameterless");
+                            }
+                            finally
+                            {
+                                cts.Dispose();
                             }
                         });
                     },
@@ -406,43 +445,64 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(DelegatesFuncDict<T, R>.delegates, options, func =>
                         {
+                            
                             int key = func.Key;
                             try
                             {
+                                if (options.CancellationToken.IsCancellationRequested)
+                                    options.CancellationToken.ThrowIfCancellationRequested();
+
                                 var output = func.Value.Item1(func.Value.Item2);
 
                                 HandleResponse<R>(output, key, response, "_Func");
+                            }
+                            catch (OperationCanceledException cancelEx)
+                            {
+                                HandleException(cancelEx, key, response, "_Func");
+                                
                             }
                             catch (Exception ex)
                             {
                                 HandleException(ex, key, response, "_Func");
                             }
+                            finally
+                            {
+                                cts.Dispose();
+                            }
                         });
                     }
                 );
             }
-            catch (OperationCanceledException ex)
+            catch (Exception ex)
             {
-                Console.WriteLine(ex.Message);
-            }
-            finally
-            {
-                cts.Dispose();
+                Console.WriteLine(ex);
             }
             
             return response;
         }
 
-        private static void HandleException(Exception ex,int key, ConcurrentDictionary<string, object> response,string suffix)
+        private static void HandleException(OperationCanceledException ex,int key, ConcurrentDictionary<string, object> response,string suffix)
+        {
+            var errorResp = new ErrorResponse
+            {
+                exception = "Operation Canceled!",
+                stackTrace = null
+            };
+                
+            response.TryAdd(key + suffix, errorResp);
+            
+        }
+
+        private static void HandleException(Exception ex, int key, ConcurrentDictionary<string, object> response, string suffix)
         {
             var errorResp = new ErrorResponse
             {
                 exception = ex.Message,
                 stackTrace = ex.StackTrace
             };
-                
+
             response.TryAdd(key + suffix, errorResp);
-            
+
         }
 
         private static void HandleResponse<R>(R output,int key, ConcurrentDictionary<string, object> response, string suffix)

@@ -29,7 +29,8 @@ namespace DelegatesOrchestrator
                 { 4,FunctionSimulations.WorkWithExceptionParameterless},
                 { 5, FunctionSimulations.WorkVoidParameterLess },
                 { 6, FunctionSimulations.WorkVoidParameterLess },
-                { 7, FunctionSimulations.WorkWithExceptionParameterless }
+                { 7, FunctionSimulations.WorkWithExceptionParameterless },
+                { 8, FunctionSimulations.DbDummyFetch }
             });
             
             tOrch.AddIndexedDelegates(new Dictionary<int, Tuple<Actions<WrapperRequest>, WrapperRequest>>
@@ -70,7 +71,7 @@ namespace DelegatesOrchestrator
             });
             #endregion
 
-            var time = Stopwatch.StartNew();
+            /*var time = Stopwatch.StartNew();
             time.Start();
             var cts = new System.Threading.CancellationTokenSource();
             Task.Factory.StartNew
@@ -80,7 +81,7 @@ namespace DelegatesOrchestrator
                     tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
                 }
             );
-
+            //tOrch.TerminateExecution(cts);
             Console.WriteLine("Press 'C' to cancel the running jobs");
             var key = Console.ReadKey().KeyChar;
             if (key == 'C' || key == 'c')
@@ -88,12 +89,28 @@ namespace DelegatesOrchestrator
                 cts.Cancel();
                 Console.WriteLine("Cancellation Requested!");
             }
-            time.Stop();
+            time.Stop();*/
 
+            var time = Stopwatch.StartNew();
+            
             time.Start();
-            var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(new System.Threading.CancellationTokenSource());
+            var cts = new System.Threading.CancellationTokenSource();
+            Task.Run(() =>
+            {
+                Console.WriteLine("Press 'C' to cancel the running jobs");
+                var key = Console.ReadKey().KeyChar;
+                if (key == 'C' || key == 'c')
+                {
+                    cts.Cancel();
+                    Console.WriteLine("Cancellation Requested!");
+                }
+            });
+        
+            var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
+            
             time.Stop();
 
+            time = Stopwatch.StartNew();
             time.Start();
             var response = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
             time.Stop();
