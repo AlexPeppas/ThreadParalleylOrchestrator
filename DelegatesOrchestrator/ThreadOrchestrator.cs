@@ -368,6 +368,8 @@ namespace Multithreading.DelegatesOrchestrator
                                     options.CancellationToken.ThrowIfCancellationRequested();
 
                                 action.Value();
+
+                                HandleResponse<string>("Task Completed", action.Key, response, "_ActionParameterless");
                             }
                             catch (OperationCanceledException cancelEx)
                             {
@@ -377,10 +379,6 @@ namespace Multithreading.DelegatesOrchestrator
                             catch (Exception ex)
                             {
                                 HandleException(ex, action.Key, response, "_ActionParameterless");
-                            }
-                            finally
-                            {
-                                cts.Dispose();
                             }
                         });
                     },
@@ -395,6 +393,8 @@ namespace Multithreading.DelegatesOrchestrator
                                     options.CancellationToken.ThrowIfCancellationRequested();
 
                                 action.Value.Item1(action.Value.Item2);
+
+                                HandleResponse<string>("Task Completed", action.Key, response, "_Action");
                             }
                             catch (OperationCanceledException cancelEx)
                             {
@@ -404,10 +404,6 @@ namespace Multithreading.DelegatesOrchestrator
                             catch (Exception ex)
                             {
                                 HandleException(ex, action.Key, response, "_Action");
-                            }
-                            finally
-                            {
-                                cts.Dispose();
                             }
                         });
                     },
@@ -435,10 +431,6 @@ namespace Multithreading.DelegatesOrchestrator
                             {
                                 HandleException(ex, key, response, "_FuncParameterless");
                             }
-                            finally
-                            {
-                                cts.Dispose();
-                            }
                         });
                     },
                     () =>
@@ -465,10 +457,6 @@ namespace Multithreading.DelegatesOrchestrator
                             {
                                 HandleException(ex, key, response, "_Func");
                             }
-                            finally
-                            {
-                                cts.Dispose();
-                            }
                         });
                     }
                 );
@@ -477,8 +465,42 @@ namespace Multithreading.DelegatesOrchestrator
             {
                 Console.WriteLine(ex);
             }
+
+            if (options.CancellationToken.IsCancellationRequested)
+                FillResponse<T, R>(response);
             
             return response;
+        }
+
+        private static void FillResponse<T,R>(ConcurrentDictionary<string,object> response)
+        {
+            string actionsSuffix = "_ActionParameterless";
+            foreach (var action in delegates)
+            {
+                if (!response.ContainsKey(action.Key + actionsSuffix))
+                    HandleException(default(OperationCanceledException), action.Key, response, actionsSuffix);
+            }
+
+            string actionsParamSuffix = "_Action";
+            foreach (var actionParam in DelegatesActionDict<T>.delegates)
+            {
+                if (!response.ContainsKey(actionParam.Key + actionsParamSuffix))
+                    HandleException(default(OperationCanceledException), actionParam.Key, response, actionsParamSuffix);
+            }
+
+            string funcSuffix = "_FuncParameterless";
+            foreach (var func in DelegatesFuncDict<R>.delegates)
+            {
+                if (!response.ContainsKey(func.Key + funcSuffix))
+                    HandleException(default(OperationCanceledException), func.Key, response, funcSuffix);
+            }
+
+            string funcParamSuffix = "_Func";
+            foreach (var funcParam in DelegatesFuncDict<T, R>.delegates)
+            {
+                if (!response.ContainsKey(funcParam.Key + funcParamSuffix))
+                    HandleException(default(OperationCanceledException), funcParam.Key, response, funcParamSuffix);
+            }
         }
 
         private static void HandleException(OperationCanceledException ex,int key, ConcurrentDictionary<string, object> response,string suffix)
@@ -486,7 +508,6 @@ namespace Multithreading.DelegatesOrchestrator
             var errorResp = new ErrorResponse
             {
                 exception = "Operation Canceled!",
-                stackTrace = null
             };
                 
             response.TryAdd(key + suffix, errorResp);
@@ -498,7 +519,8 @@ namespace Multithreading.DelegatesOrchestrator
             var errorResp = new ErrorResponse
             {
                 exception = ex.Message,
-                stackTrace = ex.StackTrace
+                stackTrace = ex.StackTrace,
+                data = ex
             };
 
             response.TryAdd(key + suffix, errorResp);

@@ -101,8 +101,10 @@ namespace DelegatesOrchestrator
                 var key = Console.ReadKey().KeyChar;
                 if (key == 'C' || key == 'c')
                 {
-                    cts.Cancel();
                     Console.WriteLine("Cancellation Requested!");
+                    cts.Cancel();
+                    Console.WriteLine("Operations Cancelled!");
+                    cts.Dispose();
                 }
             });
         
@@ -115,7 +117,7 @@ namespace DelegatesOrchestrator
             var response = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>();
             time.Stop();
             
-            Console.WriteLine($"33 functions with avg working time of 3 seconds that would totally cost {3*33} seconds, eventually costed {time.ElapsedMilliseconds / 1000} seconds");
+            Console.WriteLine($"34 functions with avg working time of 3 seconds that would totally cost {3*34} seconds, eventually costed {time.ElapsedMilliseconds / 1000} seconds");
 
 
             #region Build ThreadOrchestrator Lists
