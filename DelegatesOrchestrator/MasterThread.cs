@@ -8,6 +8,7 @@ using Multithreading.DelegatesOrchestrator;
 using System.Runtime.Serialization;
 using static Multithreading.DelegatesOrchestrator.ThreadOrchestrator;
 using System.Diagnostics;
+using System.Threading;
 
 namespace DelegatesOrchestrator
 {
@@ -30,7 +31,16 @@ namespace DelegatesOrchestrator
                 { 5, FunctionSimulations.WorkVoidParameterLess },
                 { 6, FunctionSimulations.WorkVoidParameterLess },
                 { 7, FunctionSimulations.WorkWithExceptionParameterless },
-                { 8, FunctionSimulations.DbDummyFetch }
+                { 8, FunctionSimulations.DbDummyFetch },
+                { 10,FunctionSimulations.WorkWithExceptionParameterless},
+                { 11, FunctionSimulations.WorkVoidParameterLess },
+                { 12, FunctionSimulations.WorkVoidParameterLess },
+                { 13, FunctionSimulations.WorkWithExceptionParameterless },
+                { 14,FunctionSimulations.WorkWithExceptionParameterless},
+                { 15, FunctionSimulations.WorkVoidParameterLess },
+                { 16, FunctionSimulations.WorkVoidParameterLess },
+                { 17, FunctionSimulations.WorkWithExceptionParameterless },
+                { 18, FunctionSimulations.DbDummyFetch }
             });
             
             tOrch.AddIndexedDelegates(new Dictionary<int, Tuple<Actions<WrapperRequest>, WrapperRequest>>
@@ -55,7 +65,15 @@ namespace DelegatesOrchestrator
                 {5, FunctionSimulations.Work1OutParameterless },
                 {6, FunctionSimulations.WorkWithException },
                 {7, FunctionSimulations.Work1OutParameterless },
-                {0, FunctionSimulations.WorkWithException }
+                {0, FunctionSimulations.WorkWithException },
+                {11, FunctionSimulations.Work1OutParameterless },
+                {12, FunctionSimulations.WorkWithException },
+                {13, FunctionSimulations.Work1OutParameterless },
+                {14, FunctionSimulations.WorkWithException },
+                {15, FunctionSimulations.Work1OutParameterless },
+                {16, FunctionSimulations.WorkWithException },
+                {17, FunctionSimulations.Work1OutParameterless },
+                {10, FunctionSimulations.WorkWithException }
             });
 
             tOrch.AddIndexedDelegates(new Dictionary<int,Tuple<Funcs<WrapperRequest, WrapperResponse>, WrapperRequest>>
@@ -90,10 +108,6 @@ namespace DelegatesOrchestrator
                 Console.WriteLine("Cancellation Requested!");
             }
             time.Stop();*/
-
-            var time = Stopwatch.StartNew();
-            
-            time.Start();
             var cts = new System.Threading.CancellationTokenSource();
             Task.Run(() =>
             {
@@ -107,10 +121,15 @@ namespace DelegatesOrchestrator
                     cts.Dispose();
                 }
             });
-        
+
+            var time = Stopwatch.StartNew();
+            time.Start();
+            
             var responseWithCancel = tOrch.ExecuteParallel<WrapperRequest, WrapperResponse>(cts);
             
             time.Stop();
+            
+            Console.WriteLine($"50 functions with avg working time of 3 seconds that would totally cost {3 * 50} seconds, eventually costed {time.ElapsedMilliseconds / 1000} seconds");
 
             time = Stopwatch.StartNew();
             time.Start();

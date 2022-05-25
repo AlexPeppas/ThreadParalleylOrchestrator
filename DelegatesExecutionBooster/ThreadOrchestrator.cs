@@ -1,4 +1,4 @@
-﻿using DelegatesOrchestrator.Types;
+﻿using DelegatesExecutionBooster.Types;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Multithreading.DelegatesOrchestrator
+namespace DelegatesExecutionBooster
 {
     /// <summary>
     /// T is going to be a request Wrapper Class ex. T:{payload,headers} and 
@@ -15,12 +15,11 @@ namespace Multithreading.DelegatesOrchestrator
     /// </summary>
     public class ThreadOrchestrator : IThreadOrchestrator
     {
+        private static int _cpuCoreNum;
 
-        public ThreadOrchestrator()
+        public ThreadOrchestrator(int? CPUCoreNum = null)
         {
-            //doNothing
-            //core's max threads
-            //cancellation token to cancel every running delegate ? 
+            _cpuCoreNum = CPUCoreNum ?? Environment.ProcessorCount;
         }
 
         //fundamentals
@@ -143,27 +142,6 @@ namespace Multithreading.DelegatesOrchestrator
 
         #region Execution
 
-
-        /// <summary>
-        /// Execute parameterless Actions - No Wrapper Class
-        /// <hint>To retire</hint>
-        /// </summary>
-        /// <returns></returns>
-        public void Execute()
-        {
-            int workerThreads;
-            int completionPortThreads;
-
-            var voidActionsNum = actions.Count;
-            ThreadPool.GetAvailableThreads(out workerThreads, out completionPortThreads);
-            //ThreadPool.QueueUserWorkItem(new WaitCallback())
-            //Parallel.Invoke(actions.ToArray()); 
-            var actionArray = new Action[actions.Count];
-            int index = 0;
-            foreach (var item in actions) { actionArray[index] = new Action(item); index++; };
-            Parallel.Invoke(actionArray);
-        }
-
         /// <summary>
         /// Executes parallely every delegate that has been added in lists, 
         /// Every exception occurs enqueues in a ConcurrentQueue
@@ -177,7 +155,7 @@ namespace Multithreading.DelegatesOrchestrator
 
             ParallelOptions options = new ParallelOptions
             {
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                MaxDegreeOfParallelism = _cpuCoreNum
             };
 
             Parallel.Invoke
@@ -263,7 +241,7 @@ namespace Multithreading.DelegatesOrchestrator
 
             ParallelOptions options = new ParallelOptions
             {
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                MaxDegreeOfParallelism = _cpuCoreNum
             };
 
             Parallel.Invoke
@@ -275,10 +253,12 @@ namespace Multithreading.DelegatesOrchestrator
                          try
                          {
                              action.Value();
+
+                             HandleResponse<string>("Task Completed", action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
                          }
                          catch (Exception ex)
                          {
-                             HandleException(ex, action.Key, response, "_ActionParameterless");
+                             HandleException(ex, action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
                          }
                      });
                 },
@@ -289,10 +269,12 @@ namespace Multithreading.DelegatesOrchestrator
                         try
                         {
                             action.Value.Item1(action.Value.Item2);
+
+                            HandleResponse<string>("Task Completed", action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, action.Key, response, "_Action");
+                            HandleException(ex, action.Key, response, Enums.DelegateSuffixes._Action.ToString());
                         }
                     });
                 },
@@ -305,11 +287,11 @@ namespace Multithreading.DelegatesOrchestrator
                         {
                             var output = func.Value.Invoke();
 
-                            HandleResponse<R>(output, key, response, "_FuncParameterless");
+                            HandleResponse<R>(output, key, response, Enums.DelegateSuffixes._FuncParameterless.ToString());
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, key, response, "_FuncParameterless");
+                            HandleException(ex, key, response, Enums.DelegateSuffixes._FuncParameterless.ToString());
                         }
                     });
                 },
@@ -322,11 +304,11 @@ namespace Multithreading.DelegatesOrchestrator
                         {
                             var output = func.Value.Item1(func.Value.Item2);
 
-                            HandleResponse<R>(output, key, response, "_Func");
+                            HandleResponse<R>(output, key, response, Enums.DelegateSuffixes._Func.ToString());
                         }
                         catch (Exception ex)
                         {
-                            HandleException(ex, key, response, "_Func");
+                            HandleException(ex, key, response, Enums.DelegateSuffixes._Func.ToString());
                         }
                     });
                 }
@@ -346,11 +328,11 @@ namespace Multithreading.DelegatesOrchestrator
         public ConcurrentDictionary<string, object> ExecuteParallel<T, R>(CancellationTokenSource cts)
         {
             var response = new ConcurrentDictionary<string, object>();
-            
+
             ParallelOptions options = new ParallelOptions
             {
                 CancellationToken = cts.Token,
-                MaxDegreeOfParallelism = Environment.ProcessorCount
+                MaxDegreeOfParallelism = _cpuCoreNum
             };
 
             try
@@ -467,13 +449,18 @@ namespace Multithreading.DelegatesOrchestrator
             }
 
             if (options.CancellationToken.IsCancellationRequested)
-                FillResponse<T, R>(response);
+                CompleteResponseWithCanceledDelegates<T, R>(response);
 
             return response;
         }
 
-        private static void FillResponse<T, R>(ConcurrentDictionary<string, object> response)
+        private static void CompleteResponseWithCanceledDelegates<T, R>(ConcurrentDictionary<string, object> response)
         {
+            ParallelOptions options = new ParallelOptions
+            {
+                MaxDegreeOfParallelism = _cpuCoreNum
+            };
+
             string actionsSuffix = Enums.DelegateSuffixes._ActionParameterless.ToString();
             string actionsParamSuffix = Enums.DelegateSuffixes._Action.ToString();
             string funcSuffix = Enums.DelegateSuffixes._FuncParameterless.ToString();
@@ -481,6 +468,8 @@ namespace Multithreading.DelegatesOrchestrator
 
             Parallel.Invoke
             (
+                options,
+                
                 () =>
                 {
                     foreach (var action in delegates)
@@ -496,7 +485,7 @@ namespace Multithreading.DelegatesOrchestrator
                         if (!response.ContainsKey(actionParam.Key + actionsParamSuffix))
                             HandleException(default(OperationCanceledException), actionParam.Key, response, actionsParamSuffix);
                     }
-                }, 
+                },
                 () =>
                 {
                     foreach (var func in DelegatesFuncDict<R>.delegates)
