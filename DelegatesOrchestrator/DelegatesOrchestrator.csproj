@@ -69,11 +69,13 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="FunctionSimulations.cs" />
+    <Compile Include="IThreadOrchestrator.cs" />
     <Compile Include="MasterThread.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="ThreadOrchestrator.cs" />
     <Compile Include="Types\DummyRequest.cs" />
     <Compile Include="Types\DummyResponse.cs" />
+    <Compile Include="Types\Enums.cs" />
     <Compile Include="Types\ErrorResponse.cs" />
     <Compile Include="Types\WrapperRequest.cs" />
     <Compile Include="Types\WrapperResponse.cs" />

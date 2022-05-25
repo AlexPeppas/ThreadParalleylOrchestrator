@@ -13,7 +13,7 @@ namespace Multithreading.DelegatesOrchestrator
     /// T is going to be a request Wrapper Class ex. T:{payload,headers} and 
     /// R is going to be a response Wrapper Class ex. R:{result,metadata}
     /// </summary>
-    public class ThreadOrchestrator
+    public class ThreadOrchestrator : IThreadOrchestrator
     {
 
         public ThreadOrchestrator()
@@ -43,7 +43,7 @@ namespace Multithreading.DelegatesOrchestrator
             internal static List<Funcs<R>> funcs = new List<Funcs<R>>();
         }
 
-        internal static class FuncList<T,R>
+        internal static class FuncList<T, R>
         {
             internal static List<Tuple<Funcs<T, R>, T>> funcs = new List<Tuple<Funcs<T, R>, T>>();
         }
@@ -55,17 +55,17 @@ namespace Multithreading.DelegatesOrchestrator
 
         internal static class DelegatesActionDict<T>
         {
-            internal static ConcurrentDictionary<int,Tuple<Actions<T>, T>> delegates = new ConcurrentDictionary<int, Tuple<Actions<T>, T>>();
+            internal static ConcurrentDictionary<int, Tuple<Actions<T>, T>> delegates = new ConcurrentDictionary<int, Tuple<Actions<T>, T>>();
         }
 
         internal static class DelegatesFuncDict<R>
         {
-            internal static ConcurrentDictionary<int,Funcs<R>> delegates = new ConcurrentDictionary<int, Funcs<R>>();
+            internal static ConcurrentDictionary<int, Funcs<R>> delegates = new ConcurrentDictionary<int, Funcs<R>>();
         }
 
         internal static class DelegatesFuncDict<T, R>
         {
-            internal static ConcurrentDictionary<int,Tuple<Funcs<T, R>, T>> delegates = new ConcurrentDictionary<int, Tuple<Funcs<T, R>, T>>();
+            internal static ConcurrentDictionary<int, Tuple<Funcs<T, R>, T>> delegates = new ConcurrentDictionary<int, Tuple<Funcs<T, R>, T>>();
         }
         #endregion
 
@@ -99,44 +99,44 @@ namespace Multithreading.DelegatesOrchestrator
         {
             foreach (var func in input)
             {
-                FuncList<T, R>.funcs.Add(new Tuple<Funcs<T, R>,T>(func.Item1, func.Item2));
+                FuncList<T, R>.funcs.Add(new Tuple<Funcs<T, R>, T>(func.Item1, func.Item2));
             }
         }
 
         #endregion
 
         #region Iitialize & Build Indexed Data Structures
-        public void AddIndexedDelegates(Dictionary<int,Actions> input)
+        public void AddIndexedDelegates(Dictionary<int, Actions> input)
         {
             foreach (var action in input)
             {
-                delegates.TryAdd(action.Key,new Actions(action.Value));
+                delegates.TryAdd(action.Key, new Actions(action.Value));
             }
         }
 
-        public void AddIndexedDelegates<T>(Dictionary<int,Tuple<Actions<T>, T>> input)
+        public void AddIndexedDelegates<T>(Dictionary<int, Tuple<Actions<T>, T>> input)
         {
             foreach (var action in input)
             {
                 DelegatesActionDict<T>.delegates.TryAdd
-                    (action.Key,new Tuple<Actions<T>, T>(action.Value.Item1, action.Value.Item2));
+                    (action.Key, new Tuple<Actions<T>, T>(action.Value.Item1, action.Value.Item2));
             }
         }
 
-        public void AddIndexedDelegates<R>(Dictionary<int,Funcs<R>> input)
+        public void AddIndexedDelegates<R>(Dictionary<int, Funcs<R>> input)
         {
             foreach (var func in input)
             {
-                DelegatesFuncDict<R>.delegates.TryAdd(func.Key,func.Value);
+                DelegatesFuncDict<R>.delegates.TryAdd(func.Key, func.Value);
             }
         }
 
-        public void AddIndexedDelegates<T, R>(Dictionary<int,Tuple<Funcs<T, R>,T>> input)
+        public void AddIndexedDelegates<T, R>(Dictionary<int, Tuple<Funcs<T, R>, T>> input)
         {
             foreach (var func in input)
             {
                 DelegatesFuncDict<T, R>.delegates.TryAdd
-                    (func.Key,new Tuple<Funcs<T, R>, T>(func.Value.Item1, func.Value.Item2));
+                    (func.Key, new Tuple<Funcs<T, R>, T>(func.Value.Item1, func.Value.Item2));
             }
         }
         #endregion
@@ -160,7 +160,7 @@ namespace Multithreading.DelegatesOrchestrator
             //Parallel.Invoke(actions.ToArray()); 
             var actionArray = new Action[actions.Count];
             int index = 0;
-            foreach (var item in actions) { actionArray[index] = new Action(item);index++; };
+            foreach (var item in actions) { actionArray[index] = new Action(item); index++; };
             Parallel.Invoke(actionArray);
         }
 
@@ -183,11 +183,11 @@ namespace Multithreading.DelegatesOrchestrator
             Parallel.Invoke
             (
                 () =>
-                { 
+                {
                     Parallel.ForEach(actions, options, action =>
                     {
                         try
-                        { 
+                        {
                             action();
                         }
                         catch (Exception ex)
@@ -200,8 +200,8 @@ namespace Multithreading.DelegatesOrchestrator
                 {
                     Parallel.ForEach(ActionsList<T>.actions, options, action =>
                     {
-                        try 
-                        { 
+                        try
+                        {
                             action.Item1(action.Item2);
                         }
                         catch (Exception ex)
@@ -244,9 +244,9 @@ namespace Multithreading.DelegatesOrchestrator
                 }
             );
 
-            if (exceptionsQueue.Count > 0) 
+            if (exceptionsQueue.Count > 0)
                 throw new AggregateException(exceptionsQueue);
-            
+
             return response;
         }
 
@@ -257,7 +257,7 @@ namespace Multithreading.DelegatesOrchestrator
         /// and type either WrapperResponse or ErrorResponse Dict<string,object> as Value
         /// </summary>
         /// <returns></returns>
-        public ConcurrentDictionary<string,object> ExecuteParallel<T, R>()
+        public ConcurrentDictionary<string, object> ExecuteParallel<T, R>()
         {
             var response = new ConcurrentDictionary<string, object>();
 
@@ -270,17 +270,17 @@ namespace Multithreading.DelegatesOrchestrator
             (
                 () =>
                 {
-                    Parallel.ForEach(delegates,options, action =>
-                    {
-                        try
-                        {
-                            action.Value();
-                        }
-                        catch (Exception ex)
-                        {
-                            HandleException(ex, action.Key, response, "_ActionParameterless");
-                        }
-                    });
+                    Parallel.ForEach(delegates, options, action =>
+                     {
+                         try
+                         {
+                             action.Value();
+                         }
+                         catch (Exception ex)
+                         {
+                             HandleException(ex, action.Key, response, "_ActionParameterless");
+                         }
+                     });
                 },
                 () =>
                 {
@@ -305,7 +305,7 @@ namespace Multithreading.DelegatesOrchestrator
                         {
                             var output = func.Value.Invoke();
 
-                            HandleResponse<R>(output,key,response, "_FuncParameterless");
+                            HandleResponse<R>(output, key, response, "_FuncParameterless");
                         }
                         catch (Exception ex)
                         {
@@ -331,7 +331,7 @@ namespace Multithreading.DelegatesOrchestrator
                     });
                 }
             );
-            
+
             return response;
         }
 
@@ -359,34 +359,34 @@ namespace Multithreading.DelegatesOrchestrator
                 (
                     () =>
                     {
-                        Parallel.ForEach(delegates,options, action =>
-                        {
-                            
-                            try
-                            {
-                                if (options.CancellationToken.IsCancellationRequested) 
-                                    options.CancellationToken.ThrowIfCancellationRequested();
+                        Parallel.ForEach(delegates, options, action =>
+                         {
 
-                                action.Value();
+                             try
+                             {
+                                 if (options.CancellationToken.IsCancellationRequested)
+                                     options.CancellationToken.ThrowIfCancellationRequested();
 
-                                HandleResponse<string>("Task Completed", action.Key, response, "_ActionParameterless");
-                            }
-                            catch (OperationCanceledException cancelEx)
-                            {
-                                HandleException(cancelEx, action.Key, response, "_ActionParameterless");
-                                
-                            }
-                            catch (Exception ex)
-                            {
-                                HandleException(ex, action.Key, response, "_ActionParameterless");
-                            }
-                        });
+                                 action.Value();
+
+                                 HandleResponse<string>("Task Completed", action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
+                             }
+                             catch (OperationCanceledException cancelEx)
+                             {
+                                 HandleException(cancelEx, action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
+
+                             }
+                             catch (Exception ex)
+                             {
+                                 HandleException(ex, action.Key, response, Enums.DelegateSuffixes._ActionParameterless.ToString());
+                             }
+                         });
                     },
                     () =>
                     {
                         Parallel.ForEach(DelegatesActionDict<T>.delegates, options, action =>
                         {
-                            
+
                             try
                             {
                                 if (options.CancellationToken.IsCancellationRequested)
@@ -394,16 +394,16 @@ namespace Multithreading.DelegatesOrchestrator
 
                                 action.Value.Item1(action.Value.Item2);
 
-                                HandleResponse<string>("Task Completed", action.Key, response, "_Action");
+                                HandleResponse<string>("Task Completed", action.Key, response, Enums.DelegateSuffixes._Action.ToString());
                             }
                             catch (OperationCanceledException cancelEx)
                             {
-                                HandleException(cancelEx, action.Key, response, "_Action");
-                                
+                                HandleException(cancelEx, action.Key, response, Enums.DelegateSuffixes._Action.ToString());
+
                             }
                             catch (Exception ex)
                             {
-                                HandleException(ex, action.Key, response, "_Action");
+                                HandleException(ex, action.Key, response, Enums.DelegateSuffixes._Action.ToString());
                             }
                         });
                     },
@@ -411,7 +411,7 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(DelegatesFuncDict<R>.delegates, options, func =>
                         {
-                            
+
                             int key = func.Key;
                             try
                             {
@@ -420,16 +420,16 @@ namespace Multithreading.DelegatesOrchestrator
 
                                 var output = func.Value.Invoke();
 
-                                HandleResponse<R>(output, key, response, "_FuncParameterless");
+                                HandleResponse<R>(output, key, response, Enums.DelegateSuffixes._FuncParameterless.ToString());
                             }
                             catch (OperationCanceledException cancelEx)
                             {
-                                HandleException(cancelEx, key, response, "_FuncParameterless");
-                                
+                                HandleException(cancelEx, key, response, Enums.DelegateSuffixes._FuncParameterless.ToString());
+
                             }
                             catch (Exception ex)
                             {
-                                HandleException(ex, key, response, "_FuncParameterless");
+                                HandleException(ex, key, response, Enums.DelegateSuffixes._FuncParameterless.ToString());
                             }
                         });
                     },
@@ -437,7 +437,7 @@ namespace Multithreading.DelegatesOrchestrator
                     {
                         Parallel.ForEach(DelegatesFuncDict<T, R>.delegates, options, func =>
                         {
-                            
+
                             int key = func.Key;
                             try
                             {
@@ -446,16 +446,16 @@ namespace Multithreading.DelegatesOrchestrator
 
                                 var output = func.Value.Item1(func.Value.Item2);
 
-                                HandleResponse<R>(output, key, response, "_Func");
+                                HandleResponse<R>(output, key, response, Enums.DelegateSuffixes._Func.ToString());
                             }
                             catch (OperationCanceledException cancelEx)
                             {
-                                HandleException(cancelEx, key, response, "_Func");
-                                
+                                HandleException(cancelEx, key, response, Enums.DelegateSuffixes._Func.ToString());
+
                             }
                             catch (Exception ex)
                             {
-                                HandleException(ex, key, response, "_Func");
+                                HandleException(ex, key, response, Enums.DelegateSuffixes._Func.ToString());
                             }
                         });
                     }
@@ -468,50 +468,63 @@ namespace Multithreading.DelegatesOrchestrator
 
             if (options.CancellationToken.IsCancellationRequested)
                 FillResponse<T, R>(response);
-            
+
             return response;
         }
 
-        private static void FillResponse<T,R>(ConcurrentDictionary<string,object> response)
+        private static void FillResponse<T, R>(ConcurrentDictionary<string, object> response)
         {
-            string actionsSuffix = "_ActionParameterless";
-            foreach (var action in delegates)
-            {
-                if (!response.ContainsKey(action.Key + actionsSuffix))
-                    HandleException(default(OperationCanceledException), action.Key, response, actionsSuffix);
-            }
+            string actionsSuffix = Enums.DelegateSuffixes._ActionParameterless.ToString();
+            string actionsParamSuffix = Enums.DelegateSuffixes._Action.ToString();
+            string funcSuffix = Enums.DelegateSuffixes._FuncParameterless.ToString();
+            string funcParamSuffix = Enums.DelegateSuffixes._Func.ToString();
 
-            string actionsParamSuffix = "_Action";
-            foreach (var actionParam in DelegatesActionDict<T>.delegates)
-            {
-                if (!response.ContainsKey(actionParam.Key + actionsParamSuffix))
-                    HandleException(default(OperationCanceledException), actionParam.Key, response, actionsParamSuffix);
-            }
-
-            string funcSuffix = "_FuncParameterless";
-            foreach (var func in DelegatesFuncDict<R>.delegates)
-            {
-                if (!response.ContainsKey(func.Key + funcSuffix))
-                    HandleException(default(OperationCanceledException), func.Key, response, funcSuffix);
-            }
-
-            string funcParamSuffix = "_Func";
-            foreach (var funcParam in DelegatesFuncDict<T, R>.delegates)
-            {
-                if (!response.ContainsKey(funcParam.Key + funcParamSuffix))
-                    HandleException(default(OperationCanceledException), funcParam.Key, response, funcParamSuffix);
-            }
+            Parallel.Invoke
+            (
+                () =>
+                {
+                    foreach (var action in delegates)
+                    {
+                        if (!response.ContainsKey(action.Key + actionsSuffix))
+                            HandleException(default(OperationCanceledException), action.Key, response, actionsSuffix);
+                    }
+                },
+                () =>
+                {
+                    foreach (var actionParam in DelegatesActionDict<T>.delegates)
+                    {
+                        if (!response.ContainsKey(actionParam.Key + actionsParamSuffix))
+                            HandleException(default(OperationCanceledException), actionParam.Key, response, actionsParamSuffix);
+                    }
+                }, 
+                () =>
+                {
+                    foreach (var func in DelegatesFuncDict<R>.delegates)
+                    {
+                        if (!response.ContainsKey(func.Key + funcSuffix))
+                            HandleException(default(OperationCanceledException), func.Key, response, funcSuffix);
+                    }
+                },
+                () =>
+                {
+                    foreach (var funcParam in DelegatesFuncDict<T, R>.delegates)
+                    {
+                        if (!response.ContainsKey(funcParam.Key + funcParamSuffix))
+                            HandleException(default(OperationCanceledException), funcParam.Key, response, funcParamSuffix);
+                    }
+                }
+            );
         }
 
-        private static void HandleException(OperationCanceledException ex,int key, ConcurrentDictionary<string, object> response,string suffix)
+        private static void HandleException(OperationCanceledException ex, int key, ConcurrentDictionary<string, object> response, string suffix)
         {
             var errorResp = new ErrorResponse
             {
                 exception = "Operation Canceled!",
             };
-                
+
             response.TryAdd(key + suffix, errorResp);
-            
+
         }
 
         private static void HandleException(Exception ex, int key, ConcurrentDictionary<string, object> response, string suffix)
@@ -527,7 +540,7 @@ namespace Multithreading.DelegatesOrchestrator
 
         }
 
-        private static void HandleResponse<R>(R output,int key, ConcurrentDictionary<string, object> response, string suffix)
+        private static void HandleResponse<R>(R output, int key, ConcurrentDictionary<string, object> response, string suffix)
         {
             response.TryAdd(key + suffix, output);
         }
@@ -536,6 +549,6 @@ namespace Multithreading.DelegatesOrchestrator
 
     }
 
-    
+
 
 }
