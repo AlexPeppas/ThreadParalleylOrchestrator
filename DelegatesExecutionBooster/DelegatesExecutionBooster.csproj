@@ -2,6 +2,10 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Authors>AlexPeppas</Authors>
+    <Company>AlexPeppas</Company>
+    <PackageReadmeFile></PackageReadmeFile>
   </PropertyGroup>
 
 </Project>
